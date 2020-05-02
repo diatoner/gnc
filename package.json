@@ -1,0 +1,11 @@
+{
+  "name": "gemini-client",
+  "version": "1.0.0",
+  "description": "This project is established to satisfy one purpose: expose a Gemini client, and also provide an optional GUI layer, both systems running on NodeJS.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
