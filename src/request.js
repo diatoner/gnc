@@ -1,6 +1,8 @@
 const tls = require('tls');
 const url = require('url');
 
+const errorCodes = require('./codes.js');
+
 async function request(address, timeout = 3000) {
 
   const socket = await new Promise((resolve, reject) => {
@@ -44,7 +46,7 @@ async function request(address, timeout = 3000) {
       const redirectAddress = new url.URL(error.meta);
       return request(redirectAddress);
     }
-    throw err;
+    throw error;
   }
 
 };
@@ -70,6 +72,14 @@ if (require.main === module) {
         console.log(response.body.toString());
       }
     })
-    .catch(console.error);
+    .catch((error) => {
+      if (error.statusCode) {
+        const relevantCode = errorCodes.filter(c => c.code === error.statusCode)[0];
+        console.error(relevantCode.code, relevantCode.message);
+        console.error(relevantCode.description.split('\n').join(' ').split('\t').join(' '));
+        return;
+      }
+      console.error(error);
+    });
 
 }
