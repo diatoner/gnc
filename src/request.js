@@ -1,65 +1,57 @@
 const tls = require('tls');
+const url = require('url');
 
-const GEMINI_PORT = 1965;
-const isDebugMode = process.env.DEBUG || false;
+async function request(address, timeout = 3000) {
 
-function request(address) {
+  const socket = await new Promise((resolve, reject) => {
+    const socket = tls.connect({
+      host: address.host,
+      port: address.port || 1965,
+    }, () => resolve(socket));
+    socket.setTimeout(timeout, () => {
+      socket.destroy();
+      reject('timeout');
+    });
+  });
 
-  const host = address.split('/')[0];
-  const url  = `${address}`;
-
-  console.log('Beginning request for', url);
-
-  console.log(`Connecting to ${host}`);
-
-  const socket = tls.connect({
-    host: host,
-    port: GEMINI_PORT,
-    checkServerIdentity: () => undefined,
-  }, () => {
-
-    console.log(`Connection established with ${host}`);
-
-    if (isDebugMode) {
-      // FIXME: no certificate validation
-      console.debug(`Negotiated cipher suite:`);
-      console.debug(socket.getCipher());
-      console.debug(`Peer certificate:`);
-      console.debug(socket.getPeerCertificate());
-    }
-
-    const requestUrl = `gemini://${address}`;
-    console.log(`Sending as utf8: ${requestUrl}<CRLF>`);
-    socket.write(`${requestUrl}\r\n`, 'utf8');
-
+  const header = new Promise((resolve, reject) => {
+    socket.write(`${address.href}\r\n`, 'utf8');
     socket.once('data', (data) => {
       data = String(data);
-      const statusCode = Number(data.slice(0, 2));
+      const statusCode = data.slice(0, 2);
       const metaRegExp = /^\d\d\s+(.+)\r\n$/;
       const matches = data.match(metaRegExp);
       const meta = matches && matches[1];
-
-      if (Math.floor(statusCode / 10) !== 2) {
-        console.error(`Error: ${data}`);
-        return;
-      }
-
-      console.log('\nSuccess! Receiving data...\n');
-
-      socket.on('data', (data) => {
-        console.log(String(data));
-      });
-
+      const result = {
+        statusCode,
+        meta,
+      };
+      if (statusCode[0] !== '2') reject(result);
+      else resolve(result);
     });
-
   });
 
-  socket.on('end', () => console.log('Socket closed.'));
+  try {
+    await header;
+    const body = await new Promise((resolve, reject) => {
+      let buffer = Buffer.alloc(0);
+      socket.on('data', (data) => buffer = Buffer.concat([buffer, data]));
+      socket.on('end', () => resolve(buffer));
+    });
+    return { address, header: await header, body };
+  } catch (error) {
+    if (error.statusCode[0] === '3') {
+      const redirectAddress = new url.URL(error.meta);
+      return request(redirectAddress);
+    }
+    throw err;
+  }
 
 };
 
 
 module.exports = request;
+
 
 if (require.main === module) {
 
@@ -70,8 +62,14 @@ if (require.main === module) {
     process.exit(-1);
   }
 
-  const url = args[0];
+  const address = new url.URL(args[0]);
 
-  request(url);
+  request(address)
+    .then((response) => {
+      if (response.header.meta.indexOf('text') !== -1) {
+        console.log(response.body.toString());
+      }
+    })
+    .catch(console.error);
 
 }
