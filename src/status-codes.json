@@ -1,0 +1,164 @@
+[
+  {
+    "code": 1,
+    "level": 0,
+    "message": "INPUT",
+    "description": "The requested resource accepts a line of textual user input. The <META> line is a prompt which should be displayed to the user.  The same resource should then be requested again with the user's input included as a query component.  Queries are included in requests as per the usual generic URL definition in RFC3986, i.e. separated from the path by a ?.  There is no response body."
+  },
+  {
+    "code": 2,
+    "level": 0,
+    "message": "SUCCESS",
+    "description": "The request was handled successfully and a response body will follow the response header.  The <META> line is a MIME media type which applies to the response body."
+  },
+  {
+    "code": 3,
+    "level": 0,
+    "message": "REDIRECT",
+    "description": "The server is redirecting the client to a new location for the requested resource.  There is no response body.  The header text is a new URL for the requested resource.  The URL may be absolute or relative.  The redirect should be considered temporary, i.e. clients should continue to request the resource at the original address and should not performance convenience actions like automatically updating bookmarks. There is no response body."
+  },
+  {
+    "code": 4,
+    "level": 0,
+    "message": "TEMPORARY FAILURE",
+    "description": "The request has failed.  There is no response body.  The nature of the failure is temporary, i.e. an identical request MAY succeed in the future.  The contents of <META> may provide additional information on the failure, and should be displayed to human users."
+  },
+  {
+    "code": 5,
+    "level": 0,
+    "message": "PERMANENT FAILURE",
+    "description": "The request has failed.  There is no response body.  The nature of the failure is permanent, i.e. identical future requests will reliably fail for the same reason.  The contents of <META> may provide additional information on the failure, and should be displayed to human users.  Automatic clients such as aggregators or indexing crawlers should should not repeat this request."
+  },
+  {
+    "code": 6,
+    "level": 0,
+    "message": "CLIENT CERTIFICATE REQUIRED",
+    "description": "The requested resource requires client-certificate authentication to access.  If the request was made without a certificate, it should be repeated with one.  If the request was made with a certificate, the server did not accept it and the request should be repeated with a different certificate. The contents of <META> may provide additional information on certificate requirements or the reason a certificate was rejected."
+  },
+  {
+    "code": 10,
+    "level": 1,
+    "message": "INPUT",
+    "description": "As per definition of single-digit code 1 in 1.3.2."
+  },
+  {
+    "code": 20,
+    "level": 2,
+    "message": "SUCCESS",
+    "description": "As per definition of single-digit code 2 in 1.3.2."
+  },
+  {
+    "code": 21,
+    "level": 2,
+    "message": "SUCCESS - END OF CLIENT CERTIFICATE SESSION",
+    "description": "The request was handled successfully and a response body will follow the response header.  The <META> line is a MIME media type which applies to the response body.  In addition, the server is signalling the end of a transient client certificate session which was previously initiated with a status 61 response.  The client should immediately and permanently delete the certificate and accompanying private key which was used in this request."
+  },
+  {
+    "code": 30,
+    "level": 3,
+    "message": "REDIRECT - TEMPORARY",
+    "description": "As per definition of single-digit code 3 in 1.3.2."
+  },
+  {
+    "code": 31,
+    "level": 3,
+    "message": "REDIRECT - PERMANENT",
+    "description": "The requested resource should be consistently requested from the new URL provided in future.  Tools like search engine indexers or content aggregators should update their configurations to avoid requesting the old URL, and end-user clients may automatically update bookmarks, etc.  Note that clients which only pay attention to the initial digit of status codes will treat this as a temporary redirect.  They will still end up at the right place, they just won't be able to make use of the knowledge that this redirect is permanent, so they'll pay a small performance penalty by having to follow the redirect each time."
+  },
+  {
+    "code": 40,
+    "level": 4,
+    "message": "TEMPORARY FAILURE",
+    "description": "As per definition of single-digit code 4 in 1.3.2."
+  },
+  {
+    "code": 41,
+    "level": 4,
+    "message": "SERVER UNAVAILABLE",
+    "description": "The server is unavailable due to overload or maintenance. (cf HTTP 503)"
+  },
+  {
+    "code": 42,
+    "level": 4,
+    "message": "CGI ERROR",
+    "description": "A CGI process, or similar system for generating dynamic content, died unexpectedly or timed out."
+  },
+  {
+    "code": 43,
+    "level": 4,
+    "message": "PROXY ERROR",
+    "description": "A proxy request failed because the server was unable to successfully complete a transaction with the remote host. (cf HTTP 502, 504)"
+  },
+  {
+    "code": 44,
+    "level": 4,
+    "message": "SLOW DOWN",
+    "description": "Rate limiting is in effect.  <META> is an integer number of seconds which the client must wait before another request is made to this server. (cf HTTP 429)"
+  },
+  {
+    "code": 50,
+    "level": 5,
+    "message": "PERMANENT FAILURE",
+    "description": "As per definition of single-digit code 5 in 1.3.2."
+  },
+  {
+    "code": 51,
+    "level": 5,
+    "message": "NOT FOUND",
+    "description": "The requested resource could not be found but may be available in the future. (cf HTTP 404) (struggling to remember this important status code?  Easy: you can't find things hidden at Area 51!)"
+  },
+  {
+    "code": 52,
+    "level": 5,
+    "message": "GONE",
+    "description": "The resource requested is no longer available and will not be available again.  Search engines and similar tools should remove this resource from their indices.  Content aggregators should stop requesting the resource and convey to their human users that the subscribed resource is gone. (cf HTTP 410)"
+  },
+  {
+    "code": 53,
+    "level": 5,
+    "message": "PROXY REQUEST REFUSED",
+    "description": "The request was for a resource at a domain not served by the server and the server does not accept proxy requests."
+  },
+  {
+    "code": 59,
+    "level": 5,
+    "message": "BAD REQUEST",
+    "description": "The server was unable to parse the client's request, presumably due to a malformed request. (cf HTTP 400)"
+  },
+  {
+    "code": 60,
+    "level": 6,
+    "message": "CLIENT CERTIFICATE REQUIRED",
+    "description": "As per definition of single-digit code 6 in 1.3.2."
+  },
+  {
+    "code": 61,
+    "level": 6,
+    "message": "TRANSIENT CERTIFICATE REQUESTED",
+    "description": "The server is requesting the initiation of a transient client certificate session, as described in 1.4.3.  The client should ask the user if they want to accept this and, if so, generate a disposable key/cert pair and re-request the resource using it. The key/cert pair should be destroyed when the client quits, or some reasonable time after it was last used (24 hours? Less?)"
+  },
+  {
+    "code": 62,
+    "level": 6,
+    "message": "AUTHORISED CERTIFICATE REQUIRED",
+    "description": "This resource is protected and a client certificate which the server accepts as valid must be used - a disposable key/cert generated on the fly in response to this status is not appropriate as the server will do something like compare the certificate fingerprint against a white-list of allowed certificates.  The client should ask the user if they want to use a pre-existing certificate from a stored \"key chain\"."
+  },
+  {
+    "code": 63,
+    "level": 6,
+    "message": "CERTIFICATE NOT ACCEPTED",
+    "description": "The supplied client certificate is not valid for accessing the requested resource."
+  },
+  {
+    "code": 64,
+    "level": 6,
+    "message": "FUTURE CERTIFICATE REJECTED",
+    "description": "The supplied client certificate was not accepted because its validity start date is in the future."
+  },
+  {
+    "code": 65,
+    "level": 6,
+    "message": "EXPIRED CERTIFICATE REJECTED",
+    "description": "The supplied client certificate was not accepted because its expiry date has passed."
+  }
+]
