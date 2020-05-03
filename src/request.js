@@ -21,6 +21,9 @@ async function request(address, timeout = 3000) {
       socket.destroy();
       reject('timeout');
     });
+    socket.once('error', (err) => {
+      reject(err);
+    });
   });
 
   const header = new Promise((resolve, reject) => {
@@ -60,7 +63,7 @@ async function request(address, timeout = 3000) {
 module.exports = request;
 
 
-// Testing
+// CLI usage
 if (require.main === module) {
 
   const args = process.argv.slice(2);
