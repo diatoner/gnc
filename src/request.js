@@ -8,7 +8,7 @@ const statusCodes = require('./codes.js');
  *
  * @param {url.URL} address -- Of the form URL('gemini://host.name/path')
  * @param {number} timeout -- Connection timeout, in milliseconds
- * @returns {Promise} -- Either a TimeoutError or Response
+ * @returns {Promise} -- Either a ConnectionError or Response
  */
 async function request(address, timeout = 3000) {
 
@@ -37,7 +37,7 @@ async function request(address, timeout = 3000) {
       const result = {
         status: statusCodes.filter(c => c.code === code)[0],
         meta,
-      };
+      }
       if (result.status.isOk) resolve(result);
       else reject(result);
     });

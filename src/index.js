@@ -3,39 +3,9 @@ const { URL } = require('url');
 const blessed = require('blessed');
 
 const request = require('./request.js');
+const { welcomeMessage, buildErrorMessage } = require('./messages.js');
 
-process.title = 'gnc';
-
-welcomeMessage = `
-  Welcome to the Gemini Node Client!
-
-  You're currently surfing: see {blue-bg} SURF {/} in the bottom right?
-
-  Here's how to roam the Geminispace (make sure to scroll down!):
-
-      {bold}{underline}ALL MODES{/}
-
-  C-c      Exit
-
-      {blue-bg} SURF {/} {bold}{underline}MODE{/}
-
-  Enter    Retrieve URL
-  Escape   Go to READ mode
-  C-d      Exit
-  
-      {green-bg} READ {/} {bold}{underline}MODE{/}
-
-  k        Scroll up
-  j        Scroll down
-  C-u      Page up
-  C-d      Page down
-  Enter    Go to SURF mode
-  i        Go to SURF mode
-  q        Exit
-  Escape   Exit
-
-  Enjoy your stay!\r\n`;
-
+// UI setup
 const screen = blessed.screen({ smartCSR: true });
 
 const activePage = screen.data.main = blessed.box({
@@ -49,16 +19,14 @@ const activePage = screen.data.main = blessed.box({
   label: '{bold} GNC: {yellow-fg}Good to see you!{/}{bold} {/}',
 });
 
-let currentURL = new URL('gemini://gemini.circumlunar.space/');
-
-
 const urlInput = blessed.textbox({
   parent: screen,
   height: 1,
   bottom: 0,
   width: '100%-10',
   keys: true,
-  value: currentURL.href,
+  tags: true,
+  value: 'gemini://gemini.circumlunar.space/',
   inputOnFocus: true,
 });
 
@@ -71,9 +39,11 @@ const modeIndicator = blessed.box({
   tags: true,
 });
 
+// Mode switching
 
 urlInput.on('focus', () => {
   modeIndicator.setContent('{right}{blue-bg} SURF {/}');
+  urlInput.setValue(blessed.cleanTags(urlInput.value));
   screen.render();
 });
 
@@ -82,12 +52,12 @@ urlInput.on('blur', () => {
   screen.render();
 });
 
-
 screen.key(['enter', 'i'], () => {
   if (!urlInput.focused) urlInput.focus();
 });
 
 // Scrolling
+
 const lineStack = [];
 
 screen.key(['j'], () => {
@@ -126,57 +96,57 @@ screen.key(['C-d'], () => {
   screen.render();
 });
 
+// Exiting the application
+
 urlInput.key(['C-c', 'C-d'], () => screen.destroy());
 screen.key(['C-c', 'q', 'escape'], () => screen.destroy());
 
-urlInput.on('submit', () => {
+// URL navigation
 
-  request(new URL(urlInput.value))
+const urlStack = [];
+let urlStackPointer = 0;
+
+function requestPageAt(targetUrl) {
+  urlInput.setValue(`{blink}{yellow-fg}${targetUrl}{/}`);
+  screen.render();
+
+  request(new URL(targetUrl))
     .then((res) => {
       activePage.setContent('\r\n' + res.body.toString());
-      activePage.setLabel(`{bold} GNC: {green-fg}${urlInput.value}{/}{bold} {/}`);
+      activePage.setLabel(`{bold} GNC: {green-fg}${targetUrl}{/}{bold} {/}`);
+      urlInput.setValue(`{green-fg}${targetUrl}{/}`);
       screen.render();
-    })
-    .catch((err) => {
 
-      activePage.setLabel(`{bold} GNC: {/}{bold}{red-fg}${urlInput.value}{/} `);
-
-      if (err.header) {
-        const content = [
-          ``,
-          `Looks like the server didn't like our request! Here's what it said:`,
-          ``,
-          `{bold}${err.header.status.code}{/}\t{underline}${err.header.status.message}{/}`,
-          ``,
-          `${err.header.status.description}`,
-          ``,
-          `{bold}{underline}Additional information{/}`,
-          ``,
-          `${err.header.meta}`,
-        ].join('\n');
-        activePage.setContent(content);
-      } else if (err.errno) {
-        const content = [
-          ``,
-          `Looks like we had trouble starting a connection! Here's the NodeJS error:`,
-          ``,
-          `{bold}${err.errno}{/}\t{underline}${err.code}{/}`,
-          ``,
-          `{bold}{underline}Additional information{/}`,
-          ``,
-          `${err}`,
-          ``,
-          ``,
-          ``,
-          `{bold}... Are you sure the URL is correct?{/}`,
-        ].join('\n');
-        activePage.setContent(content);
+      if (!urlStack.length || urlStack.length && urlStack[urlStack.length] !== targetUrl) {
+        urlStack.push(targetUrl);
+        urlStackPointer = urlStack.length - 1;
       }
 
+    })
+    .catch((err) => {
+      activePage.setLabel(`{bold} GNC: {/}{bold}{red-fg}${targetUrl}{/} `);
+      activePage.setContent(buildErrorMessage(err));
+      urlInput.setValue(`{red-fg}${targetUrl}{/}`);
       screen.render();
     });
+}
 
-});
+function moveURLStackPointer(delta) {
+  if (!urlStack.length) return;
+  urlStackPointer += delta;
+  urlStackPointer = Math.max(0, Math.min(urlStack.length - 1, urlStackPointer));
+  urlInput.setValue(urlStack[urlStackPointer]);
+  screen.render();
+  return true; // For chaining in one-liners
+}
+
+urlInput.key(['C-k', 'up'], () => moveURLStackPointer(1));
+urlInput.key(['C-j', 'down'], () => moveURLStackPointer(-1));
+urlInput.on('submit', () => requestPageAt(urlInput.value));
+screen.key(['h'], () => !urlInput.focused && moveURLStackPointer(-1) && requestPageAt(urlInput.value));
+screen.key(['l'], () => !urlInput.focused && moveURLStackPointer(-1) && requestPageAt(urlInput.value));
+
+// And away we go...
 
 urlInput.focus();
 screen.render();
