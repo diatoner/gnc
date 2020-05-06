@@ -103,25 +103,31 @@ screen.key(['C-c', 'q', 'escape'], () => screen.destroy());
 
 // URL navigation
 
-const urlStack = [];
-let urlStackPointer = 0;
+const history = (() => {
+  const stack = [];
+  let idx = 0;
+  const push = (x) => {
+    if (!stack.length) stack.push(x);
+    if (!idx && stack[stack.length-1] !== x) stack.push(x);
+    if (idx) stack.splice(-idx, idx, x);
+    idx = 0;
+  };
+  const back = () => { if (idx < stack.length-1) { idx++; return true } };
+  const forward = () => { if (idx > 0) { idx--; return true } };
+  const currentValue = () => stack.length && stack[stack.length-1-idx];
+  return { push, back, forward, stack, currentValue };
+})();
 
 function requestPageAt(targetUrl) {
   urlInput.setValue(`{blink}{yellow-fg}${targetUrl}{/}`);
   screen.render();
 
-  request(new URL(targetUrl))
+  return request(new URL(targetUrl))
     .then((res) => {
       activePage.setContent('\r\n' + res.body.toString());
       activePage.setLabel(`{bold} GNC: {green-fg}${targetUrl}{/}{bold} {/}`);
       urlInput.setValue(`{green-fg}${targetUrl}{/}`);
       screen.render();
-
-      if (!urlStack.length || urlStack.length && urlStack[urlStack.length] !== targetUrl) {
-        urlStack.push(targetUrl);
-        urlStackPointer = urlStack.length - 1;
-      }
-
     })
     .catch((err) => {
       activePage.setLabel(`{bold} GNC: {/}{bold}{red-fg}${targetUrl}{/} `);
@@ -131,20 +137,13 @@ function requestPageAt(targetUrl) {
     });
 }
 
-function moveURLStackPointer(delta) {
-  if (!urlStack.length) return;
-  urlStackPointer += delta;
-  urlStackPointer = Math.max(0, Math.min(urlStack.length - 1, urlStackPointer));
-  urlInput.setValue(urlStack[urlStackPointer]);
-  screen.render();
-  return true; // For chaining in one-liners
-}
-
-urlInput.key(['C-k', 'up'], () => moveURLStackPointer(1));
-urlInput.key(['C-j', 'down'], () => moveURLStackPointer(-1));
-urlInput.on('submit', () => requestPageAt(urlInput.value));
-screen.key(['h'], () => !urlInput.focused && moveURLStackPointer(-1) && requestPageAt(urlInput.value));
-screen.key(['l'], () => !urlInput.focused && moveURLStackPointer(-1) && requestPageAt(urlInput.value));
+urlInput.on('submit', () => {
+  const targetUrl = urlInput.value;
+  requestPageAt(targetUrl)
+    .then(() => history.push(targetUrl));
+});
+screen.key(['h'], () => history.back() && requestPageAt(history.currentValue()));
+screen.key(['l'], () => history.forward() && requestPageAt(history.currentValue()));
 
 // And away we go...
 
